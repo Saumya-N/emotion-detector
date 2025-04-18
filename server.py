@@ -25,8 +25,9 @@ def emot_detector():
     # Format the response string
     result = (f"For the given statement, the system response is "
               f"'anger': {response['anger']}, "
-              f"'disgust': {response['disgust']}, "
+              f"'love': {response['love']}, "
               f"'fear': {response['fear']}, "
+              f"'surprise': {response['surprise']}, "
               f"'joy': {response['joy']} and "
               f"'sadness': {response['sadness']}. "
               f"The dominant emotion is {response['dominant_emotion']}.")
@@ -41,4 +42,4 @@ def render_index_page():
     return render_template('index.html')
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5500)

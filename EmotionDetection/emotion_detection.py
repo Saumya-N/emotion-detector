@@ -1,45 +1,37 @@
-import json
-import requests
-
+from transformers import pipeline
+# Initialize the Hugging Face emotion classifier
+classifier = pipeline(
+    "text-classification",
+    model="bhadresh-savani/distilbert-base-uncased-emotion",
+    return_all_scores=True
+)
 
 def emotion_detector(text_to_analyse):
-    url = 'https://sn-watson-emotion.labs.skills.network/v1/watson.runtime.nlp.v1/NlpService/EmotionPredict'
-    header = {"grpc-metadata-mm-model-id": "emotion_aggregated-workflow_lang_en_stock"}
-    myobj = {"raw_document": {"text": text_to_analyse}}
-    response = requests.post(url, json=myobj, headers=header)
+    # Run the classifier and flatten nested lists if needed
+    raw_result = classifier(text_to_analyse)
+    emotion_list = raw_result[0] if isinstance(raw_result, list) and raw_result and isinstance(raw_result[0], list) else raw_result
 
-    if response.status_code == 400:
-        return {
-            'anger': None,
-            'disgust': None,
-            'fear': None,
-            'joy': None,
-            'sadness': None,
-            'dominant_emotion': None
-        }
+    # Build a label->score map
+    scores = {item['label'].lower(): item['score'] for item in emotion_list}
 
-    # # Parsing the JSON response from the API
-    formatted_response = json.loads(response.text)
+    # Extract individual emotions with defaults
+    anger = scores.get('anger', 0.0)
+    love = scores.get('love', 0.0)
+    fear = scores.get('fear', 0.0)
+    joy = scores.get('joy', 0.0)
+    sadness = scores.get('sadness', 0.0)
+    surprise = scores.get('surprise', 0.0)
 
-    # Extract the emotion scores correctly
-    emotion_data = formatted_response['emotionPredictions'][0]['emotion']
-
-    anger = emotion_data['anger']
-    disgust = emotion_data['disgust']
-    fear = emotion_data['fear']
-    joy = emotion_data['joy']
-    sadness = emotion_data['sadness']
-
+    # Compose result dict
     emotions = {
-        'anger': anger,
-        'disgust': disgust,
-        'fear': fear,
+        'sadness': sadness,
         'joy': joy,
-        'sadness': sadness
+        'love': love,
+        'anger': anger,
+        'fear': fear,
+        'surprise': surprise
     }
 
-    dominant_emotion = max(emotions, key=emotions.get)
-
-    emotions['dominant_emotion'] = dominant_emotion
-    # Returning a dictionary containing sentiment analysis results
+    # Determine dominant emotion
+    emotions['dominant_emotion'] = max(emotions, key=emotions.get)
     return emotions
